@@ -31,9 +31,11 @@ const upload = multer({
     limits: { fileSize: 1024 * 1024 * 20 },
   });
 
+  router.post('/login', cApi.login);
 
 
 router.post('/registeradmin', cApi.registeradmin);
+router.post('/findadmin', cApi.findadmin);
 
 router.post('/contactus', cApi.contactus);
 router.get('/findcontact', cApi.findcontact);
@@ -43,6 +45,7 @@ router.get('/find_architecture_category',cApi.find_architecture_category);
 router.post('/add_interior_categry',cApi.add_interior_categry);
 router.get('/find_interior_categry',cApi.find_interior_categry);
 router.post('/add_achitecture',upload.single('img'),cApi.add_achitecture);
+router.post('/add_interior',upload.single('img'),cApi.add_interior);
 
 router.get('/find_architecture',cApi.find_architecture);
 router.get('/find_interior',cApi.find_interior);
@@ -50,6 +53,17 @@ router.get('/find_awards',cApi.find_awards);
 router.post('/add_awards',upload.single('img'),cApi.add_awards);
 router.post('/replytoclient',cApi.replytoclient);
 router.get('/findreplytoclient',cApi.findreplytoclient);
+// crouser
+router.post('/addcrouselproduct',upload.single('img'),cApi.addcrouselproduct)
+router.get('/getcrouselproduct',cApi.getcrouselproduct)
+
+
+
+// router.delete('/deletereg/:id',cApi.deletereg)
+
+// router.put('/update/:id',cApi.update)
+
+
 
 module.exports = router;
 

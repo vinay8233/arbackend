@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const { application, json } = require('express')
 const contactmodel = require('../models/contact.model')
@@ -9,34 +11,176 @@ const interior = require('../models/interior.model')
 const awards = require('../models/about.model')
 const replytoclient = require('../models/reply.client.model')
 const admin = require('../models/admin.model')
+const crouselproduct = require('../models/crousel.model')
+
+// exports.registeradmin = async (req, res) => {
+//     // console.log(req.body)
+//     try {
+//         const {email, password } = req.body
+//         const record = new admin({
+//             Email: email,
+//             Password:password
+//         })
+//         await record.save()
+//         res.json({
+//             message: "sucessfuly register",
+//             statuscode: 202,
+//             data: record
+//         })
+//         console.log(record)
+//     }
+//     catch (error) {
+//         res.json({
+//             message: `page not found / error in registeradmin api ${error}`,
+//             statuscode: 404,
+//             data: null
+//         })
+//     }
+// }
+// exports.findadmin = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+//         const record = await admin.findOne({ Email: email, Password: password });
+
+//         if (record) {
+//             res.json({
+//                 message: "Login successful",
+//                 statuscode: 202,
+//                 data: record,
+//             });
+//         } else {
+//             res.json({
+//                 message: "Invalid email or password",
+//                 statuscode: 401,
+//                 data: null,
+//             });
+//         }
+//     } catch (error) {
+//         res.json({
+//             message: `Error in findadmin API: ${error}`,
+//             statuscode: 404,
+//             data: null,
+//         });
+//     }
+// };
 
 
-exports.registeradmin = async (req, res) => {
-    // console.log(req.body)
+
+
+exports.findadmin = async (req, res) => {
     try {
-        const {email, password } = req.body
+        const { email, password } = req.body;
+        const record = await admin.findOne({ Email: email });
+
+        if (!record) {
+            return res.status(401).json({
+                message: 'Invalid email or password',
+                statuscode: 401,
+                data: null,
+            });
+        }
+
+        // Compare hashed password
+        const isPasswordValid = await bcrypt.compare(password, record.Password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                message: 'Invalid email or password',
+                statuscode: 401,
+                data: null,
+            });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign({ id: record._id, email: record.Email }, process.env.JWT_SECRET, {
+            expiresIn: '1h', // Token expiration
+        });
+
+        res.json({
+            message: 'Login successful',
+            statuscode: 202,
+            token, // Send the token to the frontend
+            data: record,
+        });
+    } catch (error) {
+        res.json({
+            message: `Error in findadmin API: ${error}`,
+            statuscode: 404,
+            data: null,
+        });
+    }
+};
+
+// Register API (for hashing password)
+exports.registeradmin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const record = new admin({
             Email: email,
-            Password:password
-        })
-        await record.save()
+            Password: hashedPassword,
+        });
+
+        await record.save();
+
         res.json({
-            message: "sucessfuly register",
+            message: 'Successfully registered',
             statuscode: 202,
-            data: record
-        })
-        console.log(record)
-    }
-    catch (error) {
+            data: record,
+        });
+    } catch (error) {
         res.json({
-            message: `page not found / error in registeradmin api ${error}`,
+            message: `Error in registeradmin API: ${error}`,
             statuscode: 404,
-            data: null
-        })
+            data: null,
+        });
     }
-}
+};
+exports.login = async(req, res) => { 
+    try{
+    const {email, password} = req.body
+    
+    const emailcheack = await admin.findOne({Email:email})
+    const passCheack =await bcrypt.compare(password, emailcheack.password)
+    if(emailcheack !== null){
+      if(passCheack ){
+       res.json({
+          message:"succesfully login",
+          statusCode:404,
+          data:emailcheack,
+        })
 
+    }  
+    else{
+      res.json({
+        message:"wrong email or password",
+        statusCode:404,
+        data:null
+     })
+        
+  }
+  }
+   else{
+      res.json({
+        message:"wrong email or password",
+        statusCode:404,
+        data:null
+     })
+        
+  }
 
+ }
+  catch(error){         
+    res.json({
+       message:`page is note found ${error}`,
+       statusCode:404,
+       data:null
+    })
+    }
+  }
 
 
 exports.contactus = async (req, res) => {
@@ -449,6 +593,51 @@ exports.find_architecture = async (req, res) => {
         });
     }
 };
+
+
+//crouser 
+exports.addcrouselproduct = async(req, res) => {   
+    try{
+      const {name,} = req.body
+      const img = req.file.filename
+      
+      const record = new crouselproduct({
+         
+        img:img
+      })
+      await record.save()
+      // console.log(record)
+      res.json({
+        data:record,
+        message:"sucsessfully add product",
+      })
+    }
+      catch(error){
+          res.json({
+             message:`produt not found${error}`,
+             statusCode:404,
+             data:null
+          })
+          }
+        }
+    exports.getcrouselproduct = async(req, res) => { 
+      const record= await crouselproduct.find()
+      res.json({
+        data:record,
+        message:"sucsessfully get product",
+      })
+  
+  
+    }
+    exports.deletereg = async(req, res) => { 
+      const id = req.params.id
+      const record = await crouselproduct.findByIdAndDelete(id)
+      res.json({
+        data:record,
+        message:"sucsessfully delete product",
+      })
+    }
+
 
 
 
